@@ -66,7 +66,7 @@ metadata:
   name: gemini-interactions
   atespace: default
 spec:
-  image: "ghcr.io/rakyll/ax-images/gemini-interactions@sha256:PINNED_ON_FIRST_RELEASE"
+  image: "ghcr.io/rakyll/ax-images/gemini-interactions@sha256:e84b829322fc7267f79df539f5efb58b4c95543b687fad9daa233e561ff3882d"
   config:
     prompt: |
       Read the repository, install it with its test dependencies, and run the
