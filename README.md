@@ -16,16 +16,6 @@ GEMINI_API_KEY=... envsubst < images/gemini-interactions/task.yaml | ax apply -f
 ax ssh gemini-interactions -- cat /workspace/agent-output.md
 ```
 
-The task only sets `spec.config`:
-
-```yaml
-config:
-  prompt: "Run the tests and fix any failures."
-  model: gemini-3.8-flash
-```
-
-The agent works in `/workspace` with shell and file tools, plus the Workspace's HTTP MCP servers. It adds no prompts of its own.
-
 ## Release
 
 ```bash
@@ -41,5 +31,3 @@ make test
 make build-gemini-interactions IMAGE_REPO=localhost/ax-images
 make push-gemini-interactions pin IMAGE_REPO=<your-registry>   # use your own registry
 ```
-
-Everything is Go. Agents live in `cmd/`, shared code in `internal/`.
