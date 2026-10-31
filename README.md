@@ -21,7 +21,7 @@ The task only sets `spec.config`:
 ```yaml
 config:
   prompt: "Run the tests and fix any failures."
-  model: gemini-pro-latest
+  model: gemini-3.8-flash
 ```
 
 The agent works in `/workspace` with shell and file tools, plus the Workspace's HTTP MCP servers. It adds no prompts of its own.

@@ -17,7 +17,7 @@ spec:
   image: "ghcr.io/rakyll/ax-images/gemini-interactions@sha256:..."
   config:
     prompt: "Run the test suite and fix any failing tests."
-    model: gemini-pro-latest
+    model: gemini-3.8-flash
     maxTurns: 50
     builtinTools: ["google_search", "url_context"]
   env:
@@ -28,7 +28,7 @@ spec:
 | Key | Default | Meaning |
 |---|---|---|
 | `prompt` | required | The task for the agent. |
-| `model` | required | Any model the Interactions API accepts, for example `gemini-pro-latest`. |
+| `model` | required | Any model the Interactions API accepts, for example `gemini-3.8-flash`. |
 | `maxTurns` | `50` | Maximum number of interactions. Hitting it exits with status 1. |
 | `builtinTools` | none | Any of `google_search`, `url_context`, `code_execution`. |
 | `generationConfig` | none | Passed through as the interaction's `generation_config`, using the API's field names, for example `{thinking_level: high}`. |

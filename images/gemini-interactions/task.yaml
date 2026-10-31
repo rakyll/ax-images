@@ -74,7 +74,7 @@ spec:
       make one small, clearly correct improvement to the README. Finish by
       writing a short markdown report of what you checked and what you changed
       to /workspace/agent-output.md.
-    model: gemini-pro-latest
+    model: gemini-3.8-flash
     maxTurns: 50
     # Gemini's server-side tools, alongside the local shell and file tools.
     builtinTools: ["google_search", "url_context"]
