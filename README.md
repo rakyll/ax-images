@@ -3,13 +3,15 @@
 [![release](https://github.com/rakyll/ax-images/actions/workflows/release.yml/badge.svg)](https://github.com/rakyll/ax-images/actions/workflows/release.yml)
 [![license](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
-Ready-to-run coding agents for [AX](https://github.com/google/ax).
+Ready-to-run task images for [AX](https://github.com/google/ax): coding agents and CI runners.
 Point an agent at a git repo with a prompt. Get back a diff and a markdown report.
 
-| Image | Agent | API key |
+| Image | Runs | Secrets |
 |---|---|---|
-| [`gemini-interactions`](images/gemini-interactions) | [Gemini Interactions API](https://ai.google.dev/gemini-api/docs/interactions) | `GEMINI_API_KEY` |
-| [`openai-responses`](images/openai-responses) | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) | `OPENAI_API_KEY` |
+| [`gemini-interactions`](images/gemini-interactions) | A coding agent on the [Gemini Interactions API](https://ai.google.dev/gemini-api/docs/interactions) | `GEMINI_API_KEY` |
+| [`openai-responses`](images/openai-responses) | A coding agent on the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) | `OPENAI_API_KEY` |
+| [`claude-managed-agents`](images/claude-managed-agents) | [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview) sessions, with tools running in the workspace | `ANTHROPIC_API_KEY`, `ANTHROPIC_ENVIRONMENT_KEY` |
+| [`github-actions-runner`](images/github-actions-runner) | [GitHub Actions](https://docs.github.com/en/actions) jobs, as just-in-time self-hosted runners | `GITHUB_TOKEN` |
 
 Images are public at `ghcr.io/rakyll/ax-images/<image>`.
 
@@ -42,20 +44,4 @@ spec:
 
 Each image's README lists every config key.
 
-## Contributing
-
-### Develop
-
-```bash
-make test
-make build-gemini-interactions IMAGE_REPO=localhost/ax-images
-make push-gemini-interactions pin IMAGE_REPO=<your-registry>   # use your own registry
-```
-
-### Release
-
-```bash
-git tag v0.1.0 && git push origin v0.1.0
-```
-
-Every tag builds the images (amd64 and arm64), pushes them to GHCR, and pins each `task.yaml` to the new digest.
+See [CONTRIBUTING.md](CONTRIBUTING.md) to build images or cut a release.

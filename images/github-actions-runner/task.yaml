@@ -1,0 +1,59 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A Task that runs GitHub Actions jobs as a self-hosted runner.
+#
+# For each job the task registers a just-in-time runner, which takes one job
+# and then unregisters itself. Workflows target it with `runs-on` and the
+# runner's labels, for example `runs-on: [self-hosted, ax]`. The task exits
+# after spec.config.jobs jobs; set jobs to 0 to keep taking jobs until the
+# task is deleted. No Workspace is needed: each job checks out its own code.
+#
+# spec.image is the public image ghcr.io/rakyll/ax-images/github-actions-runner.
+# Every release tag rebuilds it and pins this line to the new digest;
+# Substrate rejects tag-only image references.
+#
+# GITHUB_TOKEN needs the "Administration: write" permission on the repository
+# (or "Self-hosted runners: write" on the organization). Substitute it at
+# apply time instead of committing it:
+#
+#   GITHUB_TOKEN=... envsubst < images/github-actions-runner/task.yaml | ax apply -f -
+#
+# To run your own build instead:
+#
+#   make push-github-actions-runner pin IMAGE_REPO=<your-registry>
+#
+# Then:
+#
+#   ax describe task github-actions-runner
+apiVersion: ax.io/v1alpha1
+kind: Task
+metadata:
+  name: github-actions-runner
+  atespace: default
+spec:
+  image: "ghcr.io/rakyll/ax-images/github-actions-runner@sha256:PINNED_ON_FIRST_RELEASE"
+  config:
+    repository: "<owner>/<repo>"
+    # Or register at the organization level instead:
+    # organization: "<org>"
+    labels: ["self-hosted", "ax"]
+    jobs: 1
+  env:
+    - name: GITHUB_TOKEN
+      value: "${GITHUB_TOKEN}"
+  resources:
+    limits:
+      cpu: "2"
+      memory: "4Gi"
