@@ -13,9 +13,10 @@
 // limitations under the License.
 
 // Command gemini-interactions is a coding agent on the Gemini API, using its
-// Interactions endpoint. Each turn is one interaction chained to the previous one with
-// previous_interaction_id, so the conversation lives on the server and the
-// agent only sends what is new: first the prompt, then function results.
+// Interactions endpoint. Each turn is one interaction chained to the previous
+// one with previous_interaction_id, so the conversation lives on the server
+// and the agent only sends what is new: first the prompt, then function
+// results.
 //
 // The API key comes from GEMINI_API_KEY or GOOGLE_API_KEY.
 package main
