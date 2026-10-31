@@ -16,7 +16,7 @@ jobs:
 
 ```yaml
 spec:
-  image: "ghcr.io/rakyll/ax-images/github-actions-runner@sha256:PINNED_ON_FIRST_RELEASE"
+  image: "ghcr.io/rakyll/ax-images/github-actions-runner@sha256:cf8db661c8b241a587d85fad4a233f6631c18528117d641e2e3a5de32d14ff8e"
   config:
     repository: "<owner>/<repo>"
     labels: ["self-hosted", "ax"]

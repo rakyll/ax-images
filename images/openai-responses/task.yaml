@@ -66,7 +66,7 @@ metadata:
   name: openai-responses
   atespace: default
 spec:
-  image: "ghcr.io/rakyll/ax-images/openai-responses@sha256:e981f8f5042dab18947135e29bc07fd54244804bad10e68f4272f4a1f6d65bba"
+  image: "ghcr.io/rakyll/ax-images/openai-responses@sha256:39d5c5dc7900f132b7e8a5f613efc7aa173c901fcf873f777a67a5edd2bba4e2"
   config:
     prompt: |
       Read the repository, install it with its test dependencies, and run the
