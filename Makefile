@@ -64,13 +64,16 @@ $(foreach img,$(IMAGES),$(eval $(call image_rules,$(img))))
 
 images: $(addprefix push-,$(IMAGES))
 
-# Point each images/<name>/task.yaml at $(IMAGE_REPO)/<name>@<digest>, using
-# the digests that push-<name> writes to bin/<name>.digest.
+# Point the spec.image in each images/<name>/task.yaml and README.md at
+# $(IMAGE_REPO)/<name>@<digest>, using the digests that push-<name> writes to
+# bin/<name>.digest.
 pin: check-image-repo
 	@for img in $(IMAGES); do \
 		test -f bin/$$img.digest || continue; \
 		ref="$(IMAGE_REPO)/$$img@$$(cat bin/$$img.digest)"; \
-		sed -i.bak -E "s|^(  image: ).*|\1\"$$ref\"|" images/$$img/task.yaml && rm images/$$img/task.yaml.bak; \
+		for f in images/$$img/task.yaml images/$$img/README.md; do \
+			sed -i.bak -E "s|^(  image: ).*|\1\"$$ref\"|" $$f && rm $$f.bak; \
+		done; \
 		echo "$$img -> $$ref"; \
 	done
 
