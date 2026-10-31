@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# A Task that runs a coding agent on the Gemini Interactions API.
+# A Task that runs a coding agent on the Gemini API.
 #
 # The agent chains one interaction per turn with previous_interaction_id and
 # works in /workspace through local shell and file tools. HTTP MCP servers on

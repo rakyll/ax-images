@@ -4,7 +4,7 @@ Ready-to-run coding agents for [AX](https://github.com/google/ax). Pick an image
 
 | Image | Agent | API key |
 |---|---|---|
-| [`gemini-interactions`](images/gemini-interactions) | [Gemini Interactions API](https://ai.google.dev/gemini-api/docs/interactions) | `GEMINI_API_KEY` |
+| [`gemini-interactions`](images/gemini-interactions) | [Gemini API](https://ai.google.dev/gemini-api/docs/interactions) | `GEMINI_API_KEY` |
 | [`openai-responses`](images/openai-responses) | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) | `OPENAI_API_KEY` |
 
 Images are public at `ghcr.io/rakyll/ax-images/<image>`. Each image's README lists its `spec.config` keys.

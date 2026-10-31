@@ -1,6 +1,6 @@
-# Gemini Interactions agent
+# Gemini API agent
 
-A coding agent built on the [Gemini Interactions API](https://ai.google.dev/gemini-api/docs/interactions), using `client.Interactions` in the Go SDK (`google.golang.org/genai`). The source is [`cmd/gemini-interactions`](../../cmd/gemini-interactions). Each turn is one interaction, chained to the previous one with `previous_interaction_id`. Conversation state stays on the server, and the agent only sends what is new: first the prompt, then function results.
+A coding agent built on the [Gemini API](https://ai.google.dev/gemini-api/docs/interactions), using `client.Interactions` in the Go SDK (`google.golang.org/genai`). The source is [`cmd/gemini-interactions`](../../cmd/gemini-interactions). Each turn is one interaction, chained to the previous one with `previous_interaction_id`. Conversation state stays on the server, and the agent only sends what is new: first the prompt, then function results.
 
 The model gets:
 
@@ -28,7 +28,7 @@ spec:
 | Key | Default | Meaning |
 |---|---|---|
 | `prompt` | required | The task for the agent. |
-| `model` | required | Any model the Interactions API accepts, for example `gemini-3.8-flash`. |
+| `model` | required | Any Gemini API model, for example `gemini-3.8-flash`. |
 | `maxTurns` | `50` | Maximum number of interactions. Hitting it exits with status 1. |
 | `builtinTools` | none | Any of `google_search`, `url_context`, `code_execution`. |
 | `generationConfig` | none | Passed through as the interaction's `generation_config`, using the API's field names, for example `{thinking_level: high}`. |

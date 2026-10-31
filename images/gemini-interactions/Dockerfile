@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Task image for a coding agent on the Gemini Interactions API.
+# Task image for a coding agent on the Gemini API.
 # See images/gemini-interactions/README.md.
 #
 #   make push-gemini-interactions IMAGE_REPO=<your-registry>
