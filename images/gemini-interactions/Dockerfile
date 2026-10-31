@@ -17,16 +17,28 @@
 #
 #   make push-gemini-interactions IMAGE_REPO=<your-registry>
 
-# Pinned to the same digest the AX examples use so runner behavior is
-# reproducible. Override with --build-arg BASE_IMAGE=... (or BASE_IMAGE= for
-# the Makefile) to build on another image.
-ARG BASE_IMAGE=gcr.io/ax-substrate/ate-images/ax-task-runner@sha256:3a0dea6ad8b55278685db58aca6e37dc4ba04056831d45bef3aaeafdca43cac6
+# The same packages as AX's default ax-task-runner image, which is built on
+# python:3.12-slim. The workspace setup clones repositories with git, and
+# agents use the shell tools.
+ARG BASE_IMAGE=python:3.12-slim
 FROM ${BASE_IMAGE}
 
-# The Makefile cross-compiles the agent into bin/ before building the image.
-# The same binary is the task runner when started as ax-task-runner, which
-# runs /usr/local/bin/ax-agent when spec.command is empty.
-ARG TARGETARCH=amd64
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        ca-certificates \
+        openssh-client \
+        procps \
+        bash \
+    && rm -rf /var/lib/apt/lists/*
+
+LABEL org.opencontainers.image.source="https://github.com/rakyll/ax-images"
+
+# The Makefile (or the release workflow) cross-compiles the agent into bin/
+# before building the image. The same binary is the task runner when started
+# as ax-task-runner, which runs /usr/local/bin/ax-agent when spec.command is
+# empty.
+ARG TARGETARCH
 COPY bin/linux_${TARGETARCH}/gemini-interactions /usr/local/bin/ax-agent
 RUN ln -sf ax-agent /usr/local/bin/ax-task-runner
 

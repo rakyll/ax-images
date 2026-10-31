@@ -19,17 +19,20 @@
 # Workspace are connected by the API itself. spec.command is left empty so
 # the runner starts the agent, which reads spec.config.
 #
-# Before applying:
+# spec.image is the public image ghcr.io/rakyll/ax-images/openai-responses.
+# Every release tag rebuilds it and pins this line to the new digest;
+# Substrate rejects tag-only image references.
 #
-# 1. Build and push the image, then pin its digest in spec.image below.
-#    Substrate rejects tag-only image references.
+# Pass OPENAI_API_KEY through spec.env, substituting it at apply time
+# instead of committing it:
 #
-#      make push-openai-responses IMAGE_REPO=<your-registry>
+#   OPENAI_API_KEY=... envsubst < images/openai-responses/task.yaml | ax apply -f -
 #
-# 2. Pass OPENAI_API_KEY through spec.env, substituting it at apply time
-#    instead of committing it:
+# To run your own build instead:
 #
-#      OPENAI_API_KEY=... envsubst < images/openai-responses/task.yaml | ax apply -f -
+#   make push-openai-responses pin IMAGE_REPO=<your-registry>
+#
+# Then:
 #
 #   ax describe task openai-responses
 #   ax ssh openai-responses -- cat /workspace/agent-output.md
@@ -63,7 +66,7 @@ metadata:
   name: openai-responses
   atespace: default
 spec:
-  image: "<your-registry>/openai-responses@sha256:REPLACE_WITH_PUSHED_DIGEST"
+  image: "ghcr.io/rakyll/ax-images/openai-responses@sha256:PINNED_ON_FIRST_RELEASE"
   config:
     prompt: |
       Read the repository, install it with its test dependencies, and run the

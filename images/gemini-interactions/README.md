@@ -14,7 +14,7 @@ The agent adds no instructions or prompts of its own. The model sees only `promp
 
 ```yaml
 spec:
-  image: "<your-registry>/gemini-interactions@sha256:..."
+  image: "ghcr.io/rakyll/ax-images/gemini-interactions@sha256:..."
   config:
     prompt: "Run the test suite and fix any failing tests."
     model: gemini-pro-latest

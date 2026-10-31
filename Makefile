@@ -14,11 +14,12 @@
 
 # Every directory under images/ is one image: images/<name>/Dockerfile is
 # built with the repository root as context and pushed as
-# $(IMAGE_REPO)/<name>:latest. The digest is written to bin/<name>.digest;
-# pin it in the task's spec.image.
+# $(IMAGE_REPO)/<name>:latest. The digest is written to bin/<name>.digest,
+# and make pin writes it into the task.yaml.
 #
 #   make push-gemini-interactions IMAGE_REPO=gcr.io/my-project/ax-images
 #   make images IMAGE_REPO=...       # build and push all of them
+#   make pin IMAGE_REPO=...          # point the task.yaml files at the pushed digests
 #   make test
 #
 # images/<name> runs the Go agent in cmd/<name>. Set ARCH=arm64 to build
@@ -34,7 +35,7 @@ BUILD_ARGS := $(if $(BASE_IMAGE),--build-arg BASE_IMAGE=$(BASE_IMAGE),)
 
 ARCH ?= amd64
 
-.PHONY: binaries images test check-image-repo $(addprefix build-,$(IMAGES)) $(addprefix push-,$(IMAGES))
+.PHONY: binaries images pin list-images test check-image-repo $(addprefix build-,$(IMAGES)) $(addprefix push-,$(IMAGES))
 
 # Every agent, cross-compiled for the images. Each includes the task runner.
 binaries:
@@ -62,6 +63,19 @@ endef
 $(foreach img,$(IMAGES),$(eval $(call image_rules,$(img))))
 
 images: $(addprefix push-,$(IMAGES))
+
+# Point each images/<name>/task.yaml at $(IMAGE_REPO)/<name>@<digest>, using
+# the digests that push-<name> writes to bin/<name>.digest.
+pin: check-image-repo
+	@for img in $(IMAGES); do \
+		test -f bin/$$img.digest || continue; \
+		ref="$(IMAGE_REPO)/$$img@$$(cat bin/$$img.digest)"; \
+		sed -i.bak -E "s|^(  image: ).*|\1\"$$ref\"|" images/$$img/task.yaml && rm images/$$img/task.yaml.bak; \
+		echo "$$img -> $$ref"; \
+	done
+
+list-images:
+	@echo $(IMAGES)
 
 test:
 	go vet ./...

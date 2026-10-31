@@ -3,7 +3,7 @@ module github.com/rakyll/ax-images
 go 1.27.1
 
 require (
-	github.com/google/ax v0.0.0
+	github.com/google/ax v0.3.2-0.20261030232504-f0228f13cd1c
 	github.com/openai/openai-go/v3 v3.91.0
 	google.golang.org/genai v1.77.0
 	google.golang.org/protobuf v1.36.12
@@ -41,7 +41,3 @@ require (
 	google.golang.org/grpc v1.83.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-// AX is consumed from a local checkout. Override with
-//   go mod edit -replace github.com/google/ax=<path>
-replace github.com/google/ax => ../ax
