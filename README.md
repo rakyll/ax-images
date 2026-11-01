@@ -8,7 +8,7 @@ Point an agent at a git repo with a prompt. Get back a diff and a markdown repor
 
 | Image | Runs | Secrets |
 |---|---|---|
-| [`gemini-interactions`](images/gemini-interactions) | A coding agent on the [Gemini Interactions API](https://ai.google.dev/gemini-api/docs/interactions) | `GEMINI_API_KEY` |
+| [`gemini-interactions`](images/gemini-interactions) | A coding agent on the [Gemini API](https://ai.google.dev/gemini-api/docs/interactions) | `GEMINI_API_KEY` |
 | [`openai-responses`](images/openai-responses) | A coding agent on the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) | `OPENAI_API_KEY` |
 | [`claude-managed-agents`](images/claude-managed-agents) | [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview) sessions, with tools running in the workspace | `ANTHROPIC_API_KEY`, `ANTHROPIC_ENVIRONMENT_KEY` |
 | [`github-actions-runner`](images/github-actions-runner) | [GitHub Actions](https://docs.github.com/en/actions) jobs, as just-in-time self-hosted runners | `GITHUB_TOKEN` |
