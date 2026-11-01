@@ -88,16 +88,25 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          git checkout -B main origin/main
-          make pin
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet; then
-            echo "Manifests already pinned."
-          else
+          # main may move while the images build, so pin against the latest
+          # main and retry if a push lands in between.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git checkout -B main origin/main
+            make pin
+            if git diff --quiet; then
+              echo "Manifests already pinned."
+              break
+            fi
             git commit -am "Pin task manifests to $TAG images"
-            git push origin main
-          fi
+            if git push origin main; then
+              break
+            fi
+            [ "$attempt" = 3 ] && exit 1
+            sleep 5
+          done
 
       - name: Create release
         env:
