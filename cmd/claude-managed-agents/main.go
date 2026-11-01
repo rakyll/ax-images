@@ -24,8 +24,10 @@
 //
 // With spec.config.agent and spec.config.prompt set, the task also starts a
 // session for that agent with the prompt, prints the session's events, and
-// exits when the agent finishes. Without them, it serves sessions created
-// elsewhere until it is stopped.
+// exits when the agent finishes. With spec.config.session and
+// spec.config.prompt set, it sends the prompt to that existing session
+// instead, so a task can continue where an earlier one left off. Without a
+// prompt, it serves sessions created elsewhere until it is stopped.
 package main
 
 import (
@@ -90,22 +92,28 @@ func run(ctx context.Context, clientOpts ...option.RequestOption) error {
 		return serve(ctx, client, workerOpts)
 	}
 
-	session, err := client.Beta.Sessions.New(ctx, anthropic.BetaSessionNewParams{
-		Agent:         o.agent,
-		EnvironmentID: o.environment,
-		Title:         param.NewOpt(cmp(cfg.TaskName, "ax")),
-	})
-	if err != nil {
-		return fmt.Errorf("creating session: %w", err)
+	sessionID := o.session
+	if sessionID == "" {
+		session, err := client.Beta.Sessions.New(ctx, anthropic.BetaSessionNewParams{
+			Agent:         o.agent,
+			EnvironmentID: o.environment,
+			Title:         param.NewOpt(cmp(cfg.TaskName, "ax")),
+		})
+		if err != nil {
+			return fmt.Errorf("creating session: %w", err)
+		}
+		sessionID = session.ID
+		slog.Info("session created", "session", sessionID, "environment", o.environment)
+	} else {
+		slog.Info("continuing session", "session", sessionID, "environment", o.environment)
 	}
-	slog.Info("session created", "session", session.ID, "environment", o.environment)
 
 	workerCtx, stopWorker := context.WithCancel(ctx)
 	defer stopWorker()
 	workerDone := make(chan error, 1)
 	go func() { workerDone <- serve(workerCtx, client, workerOpts) }()
 
-	err = follow(ctx, client, session.ID, o.prompt)
+	err = follow(ctx, client, sessionID, o.prompt)
 	stopWorker()
 	if werr := <-workerDone; werr != nil && err == nil {
 		err = fmt.Errorf("environment worker: %w", werr)
@@ -117,7 +125,9 @@ func run(ctx context.Context, clientOpts ...option.RequestOption) error {
 type options struct {
 	environment string
 	agent       anthropic.BetaSessionNewParamsAgentUnion
-	prompt      string
+	// session is an existing session to continue instead of creating one.
+	session string
+	prompt  string
 }
 
 func parseOptions(cfg *agent.Config) (*options, error) {
@@ -132,10 +142,17 @@ func parseOptions(cfg *agent.Config) (*options, error) {
 	errs = append(errs, err)
 	version, err := cfg.Int("agentVersion", 0)
 	errs = append(errs, err)
+	o.session, err = cfg.String("session")
+	errs = append(errs, err)
 	o.prompt, err = cfg.String("prompt")
 	errs = append(errs, err)
 
 	switch {
+	case o.session != "" && (agentID != "" || version != 0):
+		errs = append(errs, errors.New("spec.config.session: the session already has an agent, so leave agent and agentVersion unset"))
+	case o.session != "" && o.prompt == "":
+		errs = append(errs, errors.New("spec.config.session: requires prompt"))
+	case o.session != "":
 	case (agentID == "") != (o.prompt == ""):
 		errs = append(errs, errors.New("spec.config: set agent and prompt together, or neither to serve sessions created elsewhere"))
 	case version != 0 && agentID == "":

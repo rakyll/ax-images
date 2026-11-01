@@ -147,6 +147,28 @@ func TestRun_AgentVersion(t *testing.T) {
 	}
 }
 
+func TestRun_Session(t *testing.T) {
+	api, worker, err := runFake(t, "{environment: env_1, session: sess_1, prompt: Now update the docs.}",
+		`{"id": "e1", "type": "session.status_idle", "stop_reason": {"type": "end_turn"}}`,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if api.session != nil {
+		t.Errorf("created a session %v, want to continue sess_1", api.session)
+	}
+	if worker.EnvironmentID != "env_1" {
+		t.Errorf("worker options = %+v", worker)
+	}
+	if len(api.sent) != 1 {
+		t.Fatalf("sent %d events, want 1", len(api.sent))
+	}
+	msg, _ := json.Marshal(api.sent[0])
+	if want := `{"content":[{"text":"Now update the docs.","type":"text"}],"type":"user.message"}`; string(msg) != want {
+		t.Errorf("prompt event = %s, want %s", msg, want)
+	}
+}
+
 func TestRun_Serve(t *testing.T) {
 	ws := t.TempDir()
 	t.Setenv("AX_TASK_YAML", "spec: {workspace: {name: w, path: "+ws+"}, config: {environment: env_1}}")
@@ -174,6 +196,9 @@ func TestRun_Failures(t *testing.T) {
 		{"agent without prompt", "{environment: e, agent: a}", nil, "set agent and prompt together"},
 		{"prompt without agent", "{environment: e, prompt: Hi.}", nil, "set agent and prompt together"},
 		{"version without agent", "{environment: e, agentVersion: 2}", nil, "agentVersion: requires agent"},
+		{"session without prompt", "{environment: e, session: s}", nil, "session: requires prompt"},
+		{"session with agent", "{environment: e, session: s, agent: a, prompt: Hi.}", nil, "leave agent and agentVersion unset"},
+		{"session with version", "{environment: e, session: s, agentVersion: 2, prompt: Hi.}", nil, "leave agent and agentVersion unset"},
 		{"stopped", "{environment: e, agent: a, prompt: Hi.}", []string{
 			`{"id": "e1", "type": "session.status_idle", "stop_reason": {"type": "retries_exhausted"}}`,
 		}, "session sess_1 stopped: retries_exhausted"},

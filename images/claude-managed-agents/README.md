@@ -9,6 +9,7 @@ You configure the agent itself (model, system prompt, tools, MCP servers, skills
 The task runs in one of two modes:
 
 - **Prompt.** With `agent` and `prompt` set, the task creates a session for the agent, sends it the prompt, and prints the session's events. It exits when the agent finishes its turn.
+- **Continue.** With `session` and `prompt` set, the task sends the prompt to an existing session instead of creating one, so the agent keeps the session's history. Use this to follow up on an earlier task. Bind the same Workspace as that task, so the files match what the agent remembers.
 - **Serve.** Without them, the task serves sessions that you create in the Console or through the API, one at a time, until the task is deleted.
 
 ## Set up
@@ -38,10 +39,11 @@ spec:
 | `environment` | required | The self-hosted environment this task works for. |
 | `agent` | none | Agent to start a session for. Set it together with `prompt`. |
 | `agentVersion` | latest | Agent version to pin the session to. |
-| `prompt` | none | The first message of the session. |
+| `session` | none | Existing session to continue, for example `sess_...`. Set it together with `prompt`, and leave `agent` unset. The session must belong to `environment`. |
+| `prompt` | none | The message to send: the first message of a new session, or the next message of `session`. |
 
 `ANTHROPIC_ENVIRONMENT_KEY` authorizes the worker. `ANTHROPIC_API_KEY` creates the session and streams its events, so serve mode does not need it. `ANTHROPIC_BASE_URL` overrides the endpoint. The SDK removes `ANTHROPIC_*` variables from the agent's `bash` environment.
 
-In prompt mode the task prints the agent's messages and logs each tool call. It exits 0 when the agent ends its turn. It exits non-zero when the session stops for any other reason (`retries_exhausted`, `budget_reached`, `refusal`) or is terminated. The example prompt asks the agent to write its report to `/workspace/agent-output.md`. The session stays on the platform, so you can review it in the Console.
+In prompt mode the task prints the agent's messages and logs each tool call. It exits 0 when the agent ends its turn. The task logs the session ID when it starts, so a later task can continue the session. It exits non-zero when the session stops for any other reason (`retries_exhausted`, `budget_reached`, `refusal`) or is terminated. The example prompt asks the agent to write its report to `/workspace/agent-output.md`. The session stays on the platform, so you can review it in the Console.
 
 See [`task.yaml`](task.yaml) for a complete Task and Workspace.
