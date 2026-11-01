@@ -20,7 +20,7 @@
 # after spec.config.jobs jobs; set jobs to 0 to keep taking jobs until the
 # task is deleted. No Workspace is needed: each job checks out its own code.
 #
-# spec.image is the public image ghcr.io/rakyll/ax-images/github-actions-runner.
+# spec.image is the public image ghcr.io/rakyll/ax-images/github-actions.
 # Every release tag rebuilds it and pins this line to the new digest;
 # Substrate rejects tag-only image references.
 #
@@ -28,19 +28,19 @@
 # (or "Self-hosted runners: write" on the organization). Substitute it at
 # apply time instead of committing it:
 #
-#   GITHUB_TOKEN=... envsubst < images/github-actions-runner/task.yaml | ax apply -f -
+#   GITHUB_TOKEN=... envsubst < images/github-actions/task.yaml | ax apply -f -
 #
 # To run your own build instead:
 #
-#   make push-github-actions-runner pin IMAGE_REPO=<your-registry>
+#   make push-github-actions pin IMAGE_REPO=<your-registry>
 #
 # Then:
 #
-#   ax describe task github-actions-runner
+#   ax describe task github-actions
 apiVersion: ax.io/v1alpha1
 kind: Task
 metadata:
-  name: github-actions-runner
+  name: github-actions
   atespace: default
 spec:
   image: "ghcr.io/rakyll/ax-images/github-actions-runner@sha256:cf8db661c8b241a587d85fad4a233f6631c18528117d641e2e3a5de32d14ff8e"

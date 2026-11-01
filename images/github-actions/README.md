@@ -1,6 +1,6 @@
 # GitHub Actions runner
 
-Runs [GitHub Actions](https://docs.github.com/en/actions) jobs in an AX task, as [just-in-time self-hosted runners](https://docs.github.com/en/actions/reference/runners/self-hosted-runners#just-in-time-runners). The source is [`cmd/github-actions-runner`](../../cmd/github-actions-runner).
+Runs [GitHub Actions](https://docs.github.com/en/actions) jobs in an AX task, as [just-in-time self-hosted runners](https://docs.github.com/en/actions/reference/runners/self-hosted-runners#just-in-time-runners). The source is [`cmd/github-actions`](../../cmd/github-actions).
 
 For each job, the task registers a runner through the GitHub API and starts GitHub's [actions runner](https://github.com/actions/runner) with that registration. A just-in-time runner takes exactly one job and then unregisters itself, so no runner registration outlives its job. If the runner fails or the task is stopped, the task removes the registration itself.
 

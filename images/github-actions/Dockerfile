@@ -13,9 +13,9 @@
 # limitations under the License.
 
 # Task image that runs GitHub Actions jobs as just-in-time self-hosted
-# runners. See images/github-actions-runner/README.md.
+# runners. See images/github-actions/README.md.
 #
-#   make push-github-actions-runner IMAGE_REPO=<your-registry>
+#   make push-github-actions IMAGE_REPO=<your-registry>
 
 ARG BASE_IMAGE=python:3.12-slim
 FROM ${BASE_IMAGE}
@@ -58,7 +58,7 @@ RUN set -eux; \
 # before building the image. The same binary is the task runner when started
 # as ax-task-runner, which runs /usr/local/bin/ax-agent when spec.command is
 # empty.
-COPY bin/linux_${TARGETARCH}/github-actions-runner /usr/local/bin/ax-agent
+COPY bin/linux_${TARGETARCH}/github-actions /usr/local/bin/ax-agent
 RUN ln -sf ax-agent /usr/local/bin/ax-task-runner
 
 ENTRYPOINT ["/usr/local/bin/ax-task-runner"]

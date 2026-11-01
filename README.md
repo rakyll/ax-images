@@ -11,7 +11,7 @@ Point an agent at a git repo with a prompt. Get back a diff and a markdown repor
 | [`gemini`](images/gemini) | A coding agent on the [Gemini API](https://ai.google.dev/gemini-api/docs/interactions) | `GEMINI_API_KEY` |
 | [`openai`](images/openai) | A coding agent on the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) | `OPENAI_API_KEY` |
 | [`claude-managed-agents`](images/claude-managed-agents) | [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview) sessions, with tools running in the workspace | `ANTHROPIC_API_KEY`, `ANTHROPIC_ENVIRONMENT_KEY` |
-| [`github-actions-runner`](images/github-actions-runner) | [GitHub Actions](https://docs.github.com/en/actions) jobs, as just-in-time self-hosted runners | `GITHUB_TOKEN` |
+| [`github-actions`](images/github-actions) | [GitHub Actions](https://docs.github.com/en/actions) jobs, as just-in-time self-hosted runners | `GITHUB_TOKEN` |
 
 Images are public at `ghcr.io/rakyll/ax-images/<image>`.
 

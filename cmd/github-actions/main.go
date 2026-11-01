@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command github-actions-runner runs GitHub Actions jobs in an AX task.
+// Command github-actions runs GitHub Actions jobs in an AX task.
 //
 // For each job it registers a just-in-time runner with the GitHub API and
 // runs GitHub's actions runner with that configuration. A just-in-time runner
