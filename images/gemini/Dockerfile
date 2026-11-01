@@ -13,9 +13,9 @@
 # limitations under the License.
 
 # Task image for a coding agent on the Gemini API.
-# See images/gemini-interactions/README.md.
+# See images/gemini/README.md.
 #
-#   make push-gemini-interactions IMAGE_REPO=<your-registry>
+#   make push-gemini IMAGE_REPO=<your-registry>
 
 # The same packages as AX's default ax-task-runner image, which is built on
 # python:3.12-slim. The workspace setup clones repositories with git, and
@@ -39,7 +39,7 @@ LABEL org.opencontainers.image.source="https://github.com/rakyll/ax-images"
 # as ax-task-runner, which runs /usr/local/bin/ax-agent when spec.command is
 # empty.
 ARG TARGETARCH
-COPY bin/linux_${TARGETARCH}/gemini-interactions /usr/local/bin/ax-agent
+COPY bin/linux_${TARGETARCH}/gemini /usr/local/bin/ax-agent
 RUN ln -sf ax-agent /usr/local/bin/ax-task-runner
 
 ENTRYPOINT ["/usr/local/bin/ax-task-runner"]

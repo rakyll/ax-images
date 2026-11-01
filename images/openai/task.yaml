@@ -19,28 +19,28 @@
 # Workspace are connected by the API itself. spec.command is left empty so
 # the runner starts the agent, which reads spec.config.
 #
-# spec.image is the public image ghcr.io/rakyll/ax-images/openai-responses.
+# spec.image is the public image ghcr.io/rakyll/ax-images/openai.
 # Every release tag rebuilds it and pins this line to the new digest;
 # Substrate rejects tag-only image references.
 #
 # Pass OPENAI_API_KEY through spec.env, substituting it at apply time
 # instead of committing it:
 #
-#   OPENAI_API_KEY=... envsubst < images/openai-responses/task.yaml | ax apply -f -
+#   OPENAI_API_KEY=... envsubst < images/openai/task.yaml | ax apply -f -
 #
 # To run your own build instead:
 #
-#   make push-openai-responses pin IMAGE_REPO=<your-registry>
+#   make push-openai pin IMAGE_REPO=<your-registry>
 #
 # Then:
 #
-#   ax describe task openai-responses
-#   ax ssh openai-responses -- cat /workspace/agent-output.md
-#   ax ssh openai-responses -- git -C /workspace diff
+#   ax describe task openai
+#   ax ssh openai -- cat /workspace/agent-output.md
+#   ax ssh openai -- git -C /workspace diff
 apiVersion: ax.io/v1alpha1
 kind: Workspace
 metadata:
-  name: itsdangerous-openai-responses
+  name: itsdangerous-openai
   atespace: default
 spec:
   git:
@@ -63,7 +63,7 @@ spec:
 apiVersion: ax.io/v1alpha1
 kind: Task
 metadata:
-  name: openai-responses
+  name: openai
   atespace: default
 spec:
   image: "ghcr.io/rakyll/ax-images/openai-responses@sha256:39d5c5dc7900f132b7e8a5f613efc7aa173c901fcf873f777a67a5edd2bba4e2"
@@ -91,5 +91,5 @@ spec:
       cpu: "2"
       memory: "4Gi"
   workspace:
-    name: itsdangerous-openai-responses
+    name: itsdangerous-openai
   debug: true # serve guest services so `ax ssh` works; off by default

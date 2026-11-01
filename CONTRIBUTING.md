@@ -4,8 +4,8 @@
 
 ```bash
 make test
-make build-gemini-interactions IMAGE_REPO=localhost/ax-images
-make push-gemini-interactions pin IMAGE_REPO=<your-registry>   # use your own registry
+make build-gemini IMAGE_REPO=localhost/ax-images
+make push-gemini pin IMAGE_REPO=<your-registry>   # use your own registry
 ```
 
 ## Release

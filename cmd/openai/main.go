@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command openai-responses is a coding agent on the OpenAI Responses API.
+// Command openai is a coding agent on the OpenAI Responses API.
 // Each turn is one response chained to the previous one with
 // previous_response_id, so the conversation lives on the server and the
 // agent only sends what is new: first the prompt, then function call outputs.

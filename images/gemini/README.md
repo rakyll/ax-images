@@ -1,6 +1,6 @@
 # Gemini API agent
 
-A coding agent built on the [Gemini API](https://ai.google.dev/gemini-api/docs/interactions), using `client.Interactions` in the Go SDK (`google.golang.org/genai`). The source is [`cmd/gemini-interactions`](../../cmd/gemini-interactions). Each turn is one interaction, chained to the previous one with `previous_interaction_id`. Conversation state stays on the server, and the agent only sends what is new: first the prompt, then function results.
+A coding agent built on the [Gemini API](https://ai.google.dev/gemini-api/docs/interactions), using `client.Interactions` in the Go SDK (`google.golang.org/genai`). The source is [`cmd/gemini`](../../cmd/gemini). Each turn is one interaction, chained to the previous one with `previous_interaction_id`. Conversation state stays on the server, and the agent only sends what is new: first the prompt, then function results.
 
 The model gets:
 

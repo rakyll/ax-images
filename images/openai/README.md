@@ -1,6 +1,6 @@
 # OpenAI Responses agent
 
-A coding agent built on the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses), using the official Go SDK (`github.com/openai/openai-go/v3`). The source is [`cmd/openai-responses`](../../cmd/openai-responses). OpenAI's Agents SDK has no Go version, so this agent runs its loop on the API directly. Each turn is one response, chained to the previous one with `previous_response_id`. Conversation state stays on the server, and the agent only sends what is new: first the prompt, then function call outputs.
+A coding agent built on the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses), using the official Go SDK (`github.com/openai/openai-go/v3`). The source is [`cmd/openai`](../../cmd/openai). OpenAI's Agents SDK has no Go version, so this agent runs its loop on the API directly. Each turn is one response, chained to the previous one with `previous_response_id`. Conversation state stays on the server, and the agent only sends what is new: first the prompt, then function call outputs.
 
 The model gets:
 

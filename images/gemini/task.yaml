@@ -19,28 +19,28 @@
 # the Workspace are connected by the API itself. spec.command is left empty so
 # the runner starts the agent, which reads spec.config.
 #
-# spec.image is the public image ghcr.io/rakyll/ax-images/gemini-interactions.
+# spec.image is the public image ghcr.io/rakyll/ax-images/gemini.
 # Every release tag rebuilds it and pins this line to the new digest;
 # Substrate rejects tag-only image references.
 #
 # Pass GEMINI_API_KEY through spec.env, substituting it at apply time
 # instead of committing it:
 #
-#   GEMINI_API_KEY=... envsubst < images/gemini-interactions/task.yaml | ax apply -f -
+#   GEMINI_API_KEY=... envsubst < images/gemini/task.yaml | ax apply -f -
 #
 # To run your own build instead:
 #
-#   make push-gemini-interactions pin IMAGE_REPO=<your-registry>
+#   make push-gemini pin IMAGE_REPO=<your-registry>
 #
 # Then:
 #
-#   ax describe task gemini-interactions
-#   ax ssh gemini-interactions -- cat /workspace/agent-output.md
-#   ax ssh gemini-interactions -- git -C /workspace diff
+#   ax describe task gemini
+#   ax ssh gemini -- cat /workspace/agent-output.md
+#   ax ssh gemini -- git -C /workspace diff
 apiVersion: ax.io/v1alpha1
 kind: Workspace
 metadata:
-  name: itsdangerous-gemini-interactions
+  name: itsdangerous-gemini
   atespace: default
 spec:
   git:
@@ -63,7 +63,7 @@ spec:
 apiVersion: ax.io/v1alpha1
 kind: Task
 metadata:
-  name: gemini-interactions
+  name: gemini
   atespace: default
 spec:
   image: "ghcr.io/rakyll/ax-images/gemini-interactions@sha256:00d8c17e788507c9d7dee71cee5c5222b95210945b25a52be4af42a7ddb9534a"
@@ -91,5 +91,5 @@ spec:
       cpu: "2"
       memory: "4Gi"
   workspace:
-    name: itsdangerous-gemini-interactions
+    name: itsdangerous-gemini
   debug: true # serve guest services so `ax ssh` works; off by default
