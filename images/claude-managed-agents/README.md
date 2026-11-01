@@ -21,7 +21,7 @@ The task runs in one of two modes:
 
 ```yaml
 spec:
-  image: "ghcr.io/rakyll/ax-images/claude-managed-agents@sha256:2f913ac5859061c7a6d70f93b8ead655c20ff5257546e86a5131541b88294ed7"
+  image: "ghcr.io/rakyll/ax-images/claude-managed-agents@sha256:af84c607dd0b2870046d0e5617ccebc4188f54f24ed2aab8d52e14e4554d83f3"
   config:
     environment: "env_..."
     agent: "agent_..."

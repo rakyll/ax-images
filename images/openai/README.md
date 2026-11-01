@@ -14,7 +14,7 @@ The agent adds no instructions or prompts of its own. The model sees only `promp
 
 ```yaml
 spec:
-  image: "ghcr.io/rakyll/ax-images/openai-responses@sha256:39d5c5dc7900f132b7e8a5f613efc7aa173c901fcf873f777a67a5edd2bba4e2"
+  image: "ghcr.io/rakyll/ax-images/openai@sha256:9eeeb86183c1514ca4e3da8f412c2f704a457be13ba9797ebb1d942ba89417c1"
   config:
     prompt: "Run the test suite and fix any failing tests."
     model: gpt-5.5
