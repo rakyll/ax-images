@@ -23,7 +23,7 @@ The image adds no instructions or prompts of its own.
 
 ```yaml
 spec:
-  image: "ghcr.io/rakyll/ax-images/antigravity@sha256:PINNED_ON_FIRST_RELEASE"
+  image: "ghcr.io/rakyll/ax-images/antigravity@sha256:571b06a4273d9750075053e72ea9e9305560418b5db61c1eeed7d375f9d699d0"
   config:
     prompt: "Run the test suite and fix any failing tests."
     model: gemini-3.8-flash

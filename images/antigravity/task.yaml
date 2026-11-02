@@ -69,7 +69,7 @@ metadata:
   name: antigravity
   atespace: default
 spec:
-  image: "ghcr.io/rakyll/ax-images/antigravity@sha256:PINNED_ON_FIRST_RELEASE"
+  image: "ghcr.io/rakyll/ax-images/antigravity@sha256:571b06a4273d9750075053e72ea9e9305560418b5db61c1eeed7d375f9d699d0"
   config:
     prompt: |
       Read the repository, install it with its test dependencies, and run the
