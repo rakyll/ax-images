@@ -16,7 +16,7 @@ jobs:
 
 ```yaml
 spec:
-  image: "ghcr.io/rakyll/ax-images/github-actions@sha256:eab279ec00907a5be91cced06d5209fd4652c6da8f74dcedf434f784977338c7"
+  image: "ghcr.io/rakyll/ax-images/github-actions@sha256:63d02f8ff154efd5ee269414bc793bde90afb5aadedbe756e1c2f8389207c7bd"
   config:
     repository: "<owner>/<repo>"
     labels: ["self-hosted", "ax"]

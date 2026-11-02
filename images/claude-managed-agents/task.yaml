@@ -68,7 +68,7 @@ metadata:
   name: claude-managed-agents
   atespace: default
 spec:
-  image: "ghcr.io/rakyll/ax-images/claude-managed-agents@sha256:b622f9c9bc342880c88ed676063de568042b0f308d08485f4e98338a5d9025f3"
+  image: "ghcr.io/rakyll/ax-images/claude-managed-agents@sha256:1a532d86c58a5fea3005e9c525683cf8f354e2c403be6460a308ad2f8f0510c0"
   config:
     environment: "env_..."
     agent:
