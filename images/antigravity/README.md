@@ -2,11 +2,13 @@
 
 Runs the [Antigravity agent](https://ai.google.dev/gemini-api/docs/antigravity-agent) on the Gemini API, with its tools running in the AX task. It uses `client.Interactions` in the Go SDK (`google.golang.org/genai`) with `agent` set instead of `model`. The source is [`cmd/antigravity`](../../cmd/antigravity).
 
-By default, the Antigravity agent works in a Linux sandbox hosted by Google. This image does not use that sandbox:
+The Antigravity agent always works in a Linux sandbox hosted by Google, and its built-in tools act on that sandbox. This image keeps the work in the task instead:
 
-- It sets no `environment`, so no sandbox is provisioned and the agent's hosted filesystem tools stay off.
 - It replaces the agent's default tools, so the hosted `code_execution` is not offered.
-- Instead, the agent gets `run_shell`, `read_file`, `write_file`, and `edit_file` as functions ([`internal/agent`](../../internal/agent)).
+- The API always adds the hosted filesystem tools (`view_file`, `write_to_file`, `replace_file_content`, `list_dir`, `find_by_name`). The image mounts a [hook](https://ai.google.dev/gemini-api/docs/agent-hooks) in the sandbox, at `.agents/hooks.json`, that denies every tool call made there. Hooks do not fire for function tools.
+- The agent gets `run_shell`, `read_file`, `write_file`, and `edit_file` as functions ([`internal/agent`](../../internal/agent)).
+
+The first interaction creates the sandbox, and later interactions reuse it by its `environment_id`. Any call the sandbox answers, such as a denied one, is logged as a warning and is not run in the workspace.
 
 Each interaction ends with `requires_action` and the agent's function calls. The image runs them in the workspace and sends the results in the next interaction, chained with `previous_interaction_id`. Every command and file change happens in the task.
 
@@ -38,7 +40,7 @@ spec:
 | `agent` | `antigravity-preview-09-2026` | The Antigravity agent version. |
 | `model` | the agent's default | The model the agent reasons with, for example `gemini-3.8-flash` or `gemini-4-argon`. Passed as `agent_config.model`. |
 | `maxTotalTokens` | none | Token budget, passed as `agent_config.max_total_tokens`. Exceeding it ends the interaction as `incomplete`. |
-| `maxTurns` | `50` | Maximum number of interactions. Each one returns a batch of tool calls. Hitting it exits with status 1. |
+| `maxTurns` | `50` | Maximum number of interactions. Each one usually returns a single tool call, so allow about one turn per tool call. Hitting it exits with status 1. |
 | `builtinTools` | none | Any of `google_search`, `url_context`. `code_execution` is rejected because it would run outside the task. |
 | `systemInstruction` | none | System instruction for every interaction. |
 

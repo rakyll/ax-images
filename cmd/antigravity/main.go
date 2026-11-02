@@ -16,13 +16,15 @@
 // Interactions endpoint, with every shell command and file operation running
 // in the AX workspace.
 //
-// The agent normally works in a sandbox hosted by Google. This command sets
-// no environment, so no sandbox is provisioned and the agent's filesystem
-// tools stay off, and it replaces the default tools, including
-// code_execution, with the local shell and file tools. The agent calls those
-// as functions: each interaction ends with status requires_action, the
-// command runs the calls in the workspace, and the next interaction, chained
-// with previous_interaction_id, carries their results.
+// The agent always works in a sandbox hosted by Google, and its filesystem
+// tools (view_file, write_to_file, and the rest) act on that sandbox. This
+// command replaces the default tools, including code_execution, with the
+// local shell and file tools, and mounts a hook in the sandbox that denies
+// every tool call made there, so the agent has to use the local tools. Hooks
+// do not fire for function tools. The agent calls the local tools as
+// functions: each interaction ends with status requires_action, the command
+// runs the calls in the workspace, and the next interaction, chained with
+// previous_interaction_id, carries their results.
 //
 // The API key comes from GEMINI_API_KEY or GOOGLE_API_KEY.
 package main
@@ -47,6 +49,33 @@ import (
 
 // defaultAgent is the Antigravity agent used when spec.config.agent is unset.
 const defaultAgent = "antigravity-preview-09-2026"
+
+// denyHooks is the sandbox's .agents/hooks.json. It denies every tool call
+// that would run in the hosted sandbox.
+const denyHooks = `{
+  "ax-workspace": {
+    "pre_tool_execution": [{
+      "matcher": ".*",
+      "hooks": [{
+        "type": "command",
+        "command": "echo '{\"decision\": \"deny\", \"reason\": \"Tools in the hosted sandbox are disabled. Use run_shell, read_file, write_file, and edit_file, which run in the task workspace.\"}'",
+        "timeout": 10
+      }]
+    }]
+  }
+}`
+
+// sandbox is the environment of the first interaction: a new hosted sandbox
+// with denyHooks mounted.
+func sandbox() interactions.CreateAgentInteractionEnvironment {
+	return interactions.NewCreateAgentInteractionEnvironment(interactions.Environment{
+		Sources: []interactions.Source{{
+			Type:    interactions.SourceTypeInline.ToPointer(),
+			Target:  new(".agents/hooks.json"),
+			Content: new(denyHooks),
+		}},
+	})
+}
 
 func main() {
 	if taskrunner.Invoked() {
@@ -135,7 +164,7 @@ func parseOptions(cfg *agent.Config) (*options, error) {
 
 // tools returns the local tools, the Workspace's HTTP MCP servers, and the
 // requested built-in tools. Passing tools replaces the agent's defaults, so
-// code_execution, which would run in a hosted sandbox, is left out.
+// code_execution, which would run in the hosted sandbox, is left out.
 func tools(servers []agent.MCPServer, builtin []string) ([]interactions.Tool, error) {
 	var out []interactions.Tool
 	for _, t := range agent.Tools {
@@ -172,6 +201,7 @@ func tools(servers []agent.MCPServer, builtin []string) ([]interactions.Tool, er
 func loop(ctx context.Context, client *genai.Client, workspace string, o *options) error {
 	input := interactions.NewInteractionsInput(o.prompt)
 	agentConfig := interactions.NewCreateAgentInteractionAgentConfig(o.agentConfig)
+	env := sandbox()
 	var previousID *string
 	handled := map[string]bool{}
 	for turn := 1; ; turn++ {
@@ -181,6 +211,7 @@ func loop(ctx context.Context, client *genai.Client, workspace string, o *option
 		req := interactions.CreateAgentInteraction{
 			Agent:                 interactions.AgentOption(o.agent),
 			AgentConfig:           &agentConfig,
+			Environment:           &env,
 			Input:                 &input,
 			PreviousInteractionID: previousID,
 			// Tools and the system instruction are not inherited from
@@ -201,12 +232,17 @@ func loop(ctx context.Context, client *genai.Client, workspace string, o *option
 			return fmt.Errorf("turn %d: response has no interaction", turn)
 		}
 		previousID = in.ID
+		if in.EnvironmentID != nil {
+			// Later interactions reuse the sandbox, and its hook.
+			env = interactions.NewCreateAgentInteractionEnvironment(*in.EnvironmentID)
+		}
 
-		// Calls the agent's runtime already answered have a function_result
-		// in the same interaction and are not run again.
+		// Calls the sandbox already answered, such as denied ones, have a
+		// function_result in the same interaction and are not run here.
+		answered := map[string]bool{}
 		for _, step := range in.Steps {
 			if step.FunctionResultStep != nil {
-				handled[step.FunctionResultStep.CallID] = true
+				answered[step.FunctionResultStep.CallID] = true
 			}
 		}
 		var results []interactions.Step
@@ -227,6 +263,10 @@ func loop(ctx context.Context, client *genai.Client, workspace string, o *option
 					continue
 				}
 				handled[call.ID] = true
+				if answered[call.ID] {
+					slog.Warn("sandbox tool call, not run in the workspace", "tool", call.Name, "args", call.Arguments)
+					continue
+				}
 				slog.Info("tool call", "tool", call.Name, "args", call.Arguments)
 				out := agent.CallTool(ctx, workspace, call.Name, call.Arguments)
 				results = append(results, interactions.NewStep(interactions.FunctionResultStep{

@@ -70,7 +70,7 @@ func runFake(t *testing.T, config string, responses ...string) (*fakeAPI, string
 func TestRun(t *testing.T) {
 	api, ws, err := runFake(t,
 		"{prompt: Do it., model: gemini-4-argon, maxTotalTokens: 50000, systemInstruction: Be brief., builtinTools: [google_search]}",
-		`{"id": "i1", "status": "requires_action", "steps": [
+		`{"id": "i1", "status": "requires_action", "environment_id": "env1", "steps": [
 			{"type": "model_output", "content": [{"type": "text", "text": "Writing."}]},
 			{"type": "function_call", "id": "c1", "name": "write_file", "arguments": {"path": "out.txt", "content": "hi"}},
 			{"type": "function_call", "id": "c2", "name": "run_shell", "arguments": {"command": "echo hosted > hosted.txt"}},
@@ -98,10 +98,28 @@ func TestRun(t *testing.T) {
 	if first["agent"] != defaultAgent || first["input"] != "Do it." || first["system_instruction"] != "Be brief." {
 		t.Errorf("first request = %v", first)
 	}
-	for _, key := range []string{"model", "environment", "previous_interaction_id"} {
+	for _, key := range []string{"model", "previous_interaction_id"} {
 		if v, ok := first[key]; ok {
 			t.Errorf("first request sets %s = %v", key, v)
 		}
+	}
+	env, _ := first["environment"].(map[string]any)
+	sources, _ := env["sources"].([]any)
+	if env["type"] != "remote" || len(sources) != 1 {
+		t.Fatalf("environment = %v", first["environment"])
+	}
+	src := sources[0].(map[string]any)
+	if src["type"] != "inline" || src["target"] != ".agents/hooks.json" {
+		t.Errorf("source = %v", src)
+	}
+	var hooks map[string]any
+	if err := json.Unmarshal([]byte(src["content"].(string)), &hooks); err != nil {
+		t.Fatalf("hooks.json: %v", err)
+	}
+	pre := hooks["ax-workspace"].(map[string]any)["pre_tool_execution"].([]any)[0].(map[string]any)
+	cmd := pre["hooks"].([]any)[0].(map[string]any)["command"].(string)
+	if pre["matcher"] != ".*" || !strings.Contains(cmd, `"decision": "deny"`) {
+		t.Errorf("hooks.json = %s", src["content"])
 	}
 	ac, _ := first["agent_config"].(map[string]any)
 	if ac["type"] != "antigravity" || ac["model"] != "gemini-4-argon" || fmt.Sprint(ac["max_total_tokens"]) != "50000" {
@@ -118,7 +136,7 @@ func TestRun(t *testing.T) {
 	}
 
 	second := api.requests[1]
-	if second["previous_interaction_id"] != "i1" || second["agent_config"] == nil || len(second["tools"].([]any)) != 6 {
+	if second["previous_interaction_id"] != "i1" || second["environment"] != "env1" || second["agent_config"] == nil || len(second["tools"].([]any)) != 6 {
 		t.Errorf("second request = %v", second)
 	}
 	input, _ := second["input"].([]any)

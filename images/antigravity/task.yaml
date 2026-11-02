@@ -14,8 +14,9 @@
 
 # A Task that runs the Antigravity agent on the Gemini API.
 #
-# The agent reasons on Google's servers, but no hosted sandbox is provisioned:
-# its shell and file tools are functions that run in /workspace, in this task.
+# The agent runs on Google's servers, but its shell and file tools are
+# functions that run in /workspace, in this task. A hook denies every tool
+# call in the agent's hosted sandbox.
 # Each interaction is chained to the previous one with previous_interaction_id.
 # HTTP MCP servers on the Workspace are connected by the API itself.
 # spec.command is left empty so the runner starts the agent, which reads
