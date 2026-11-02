@@ -1,22 +1,16 @@
 # Claude Managed Agents
 
-Runs [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview) sessions in an AX task, using the environment worker from the Anthropic Go SDK (`github.com/anthropics/anthropic-sdk-go/lib/environments`). The source is [`cmd/claude-managed-agents`](../../cmd/claude-managed-agents).
+Runs [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview) sessions in an AX task. The source is [`cmd/claude-managed-agents`](../../cmd/claude-managed-agents).
 
-The task is the worker of a [self-hosted environment](https://platform.claude.com/docs/en/managed-agents/self-hosted-environments). Claude runs on the Claude Platform. When the agent calls a tool from `agent_toolset_20260401` (`bash`, `read`, `write`, `edit`, `glob`, `grep`), the task runs it in `/workspace` and sends back the result. MCP tools and the agent's other server-side tools stay on the platform.
+The task is the worker of a [self-hosted environment](https://platform.claude.com/docs/en/managed-agents/self-hosted-environments). Claude runs on the Claude Platform. The agent's `bash`, `read`, `write`, `edit`, `glob`, and `grep` tools run in `/workspace`. MCP and other server-side tools stay on the platform.
 
-You configure the agent itself (model, system prompt, tools, MCP servers, skills) on the Claude Platform. The task adds no instructions or prompts of its own. The agent sees only `prompt`.
+The task runs in one of three modes:
 
-The task runs in one of two modes:
+- **Prompt.** Set `agent` or `agentId`, and `prompt`. The task starts a session, sends the prompt, and exits when the agent finishes.
+- **Continue.** Set `session` and `prompt` to follow up on an earlier session. Bind the same Workspace as the earlier task.
+- **Serve.** Set neither. The task serves sessions that you create in the Console or through the API until the task is deleted.
 
-- **Prompt.** With `agent` and `prompt` set, the task creates a session for the agent, sends it the prompt, and prints the session's events. It exits when the agent finishes its turn.
-- **Continue.** With `session` and `prompt` set, the task sends the prompt to an existing session instead of creating one, so the agent keeps the session's history. Use this to follow up on an earlier task. Bind the same Workspace as that task, so the files match what the agent remembers.
-- **Serve.** Without them, the task serves sessions that you create in the Console or through the API, one at a time, until the task is deleted.
-
-## Set up
-
-1. Create an agent that has the `agent_toolset_20260401` tools.
-2. Create a self-hosted environment and generate an environment key for it.
-3. Give the task an environment of its own. The worker claims every session in its environment, including sessions started by other prompts.
+Give each task its own environment. The worker claims every session in its environment.
 
 ## Configure a task
 
@@ -25,7 +19,9 @@ spec:
   image: "ghcr.io/rakyll/ax-images/claude-managed-agents@sha256:b622f9c9bc342880c88ed676063de568042b0f308d08485f4e98338a5d9025f3"
   config:
     environment: "env_..."
-    agent: "agent_..."
+    agent:
+      model: "claude-opus-5-5"
+      system: "You are a careful software engineer."
     prompt: "Run the test suite and fix any failing tests."
   env:
     - name: ANTHROPIC_API_KEY
@@ -37,13 +33,14 @@ spec:
 | Key | Default | Meaning |
 |---|---|---|
 | `environment` | required | The self-hosted environment this task works for. |
-| `agent` | none | Agent to start a session for. Set it together with `prompt`. |
-| `agentVersion` | latest | Agent version to pin the session to. |
-| `session` | none | Existing session to continue, for example `sess_...`. Set it together with `prompt`, and leave `agent` unset. The session must belong to `environment`. |
-| `prompt` | none | The message to send: the first message of a new session, or the next message of `session`. |
+| `agent` | none | An agent to create on each run: `model` (required), `name` (defaults to the task name), `system`, and `description`. |
+| `agentId` | none | An existing agent to use instead, for example one with MCP servers or skills. It needs the `agent_toolset_20260401` tools. |
+| `agentVersion` | latest | Version of `agentId` to use. |
+| `session` | none | An existing session to continue. Leave `agent` and `agentId` unset. |
+| `prompt` | none | The message to send to the session. |
 
-`ANTHROPIC_ENVIRONMENT_KEY` authorizes the worker. `ANTHROPIC_API_KEY` creates the session and streams its events, so serve mode does not need it. `ANTHROPIC_BASE_URL` overrides the endpoint. The SDK removes `ANTHROPIC_*` variables from the agent's `bash` environment.
+`ANTHROPIC_ENVIRONMENT_KEY` authorizes the worker. `ANTHROPIC_API_KEY` creates agents and sessions, so serve mode does not need it. `ANTHROPIC_BASE_URL` overrides the endpoint.
 
-In prompt mode the task prints the agent's messages and logs each tool call. It exits 0 when the agent ends its turn. The task logs the session ID when it starts, so a later task can continue the session. It exits non-zero when the session stops for any other reason (`retries_exhausted`, `budget_reached`, `refusal`) or is terminated. The example prompt asks the agent to write its report to `/workspace/agent-output.md`. The session stays on the platform, so you can review it in the Console.
+The task logs the agent and session IDs, the agent's messages, and each tool call. It exits 0 when the agent ends its turn, and non-zero when the session stops for any other reason. You can review the session in the Console.
 
 See [`task.yaml`](task.yaml) for a complete Task and Workspace.

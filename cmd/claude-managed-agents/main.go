@@ -18,13 +18,13 @@
 // The task is the worker of a self-hosted Managed Agents environment: it
 // claims the environment's sessions and runs their agent_toolset tools
 // (bash, read, write, edit, glob, grep) in the AX workspace, using the
-// environment worker from the Anthropic Go SDK. The agent itself, with its
-// model, system prompt, MCP servers, and skills, is configured on the Claude
-// Platform, not here.
+// environment worker from the Anthropic Go SDK.
 //
-// With spec.config.agent and spec.config.prompt set, the task also starts a
-// session for that agent with the prompt, prints the session's events, and
-// exits when the agent finishes. With spec.config.session and
+// With spec.config.prompt set, the task also starts a session with the
+// prompt, prints the session's events, and exits when the agent finishes.
+// The session's agent is either defined in spec.config.agent, which the task
+// creates first, or an existing agent named by spec.config.agentId. With
+// spec.config.session and
 // spec.config.prompt set, it sends the prompt to that existing session
 // instead, so a task can continue where an earlier one left off. Without a
 // prompt, it serves sessions created elsewhere until it is stopped.
@@ -92,6 +92,15 @@ func run(ctx context.Context, clientOpts ...option.RequestOption) error {
 		return serve(ctx, client, workerOpts)
 	}
 
+	if o.newAgent != nil {
+		a, err := client.Beta.Agents.New(ctx, *o.newAgent)
+		if err != nil {
+			return fmt.Errorf("creating agent: %w", err)
+		}
+		o.agent.OfString = param.NewOpt(a.ID)
+		slog.Info("agent created", "agent", a.ID, "version", a.Version)
+	}
+
 	sessionID := o.session
 	if sessionID == "" {
 		session, err := client.Beta.Sessions.New(ctx, anthropic.BetaSessionNewParams{
@@ -124,7 +133,10 @@ func run(ctx context.Context, clientOpts ...option.RequestOption) error {
 // options are the image's spec.config keys.
 type options struct {
 	environment string
-	agent       anthropic.BetaSessionNewParamsAgentUnion
+	// newAgent, when set, is created before the session, which then uses it
+	// in place of agent.
+	newAgent *anthropic.BetaAgentNewParams
+	agent    anthropic.BetaSessionNewParamsAgentUnion
 	// session is an existing session to continue instead of creating one.
 	session string
 	prompt  string
@@ -138,7 +150,9 @@ func parseOptions(cfg *agent.Config) (*options, error) {
 	var err error
 	o.environment, err = cfg.Required("environment")
 	errs = append(errs, err)
-	agentID, err := cfg.String("agent")
+	o.newAgent, err = parseAgent(cfg)
+	errs = append(errs, err)
+	agentID, err := cfg.String("agentId")
 	errs = append(errs, err)
 	version, err := cfg.Int("agentVersion", 0)
 	errs = append(errs, err)
@@ -146,17 +160,21 @@ func parseOptions(cfg *agent.Config) (*options, error) {
 	errs = append(errs, err)
 	o.prompt, err = cfg.String("prompt")
 	errs = append(errs, err)
+	hasAgent := o.newAgent != nil || agentID != ""
 
 	switch {
-	case o.session != "" && (agentID != "" || version != 0):
-		errs = append(errs, errors.New("spec.config.session: the session already has an agent, so leave agent and agentVersion unset"))
+	case o.session != "" && (hasAgent || version != 0):
+		errs = append(errs, errors.New("spec.config.session: the session already has an agent, so leave agent, agentId, and agentVersion unset"))
 	case o.session != "" && o.prompt == "":
 		errs = append(errs, errors.New("spec.config.session: requires prompt"))
 	case o.session != "":
-	case (agentID == "") != (o.prompt == ""):
-		errs = append(errs, errors.New("spec.config: set agent and prompt together, or neither to serve sessions created elsewhere"))
+	case o.newAgent != nil && agentID != "":
+		errs = append(errs, errors.New("spec.config: set agent to create an agent or agentId to use an existing one, not both"))
+	case hasAgent != (o.prompt != ""):
+		errs = append(errs, errors.New("spec.config: set agent or agentId together with prompt, or none of them to serve sessions created elsewhere"))
 	case version != 0 && agentID == "":
-		errs = append(errs, errors.New("spec.config.agentVersion: requires agent"))
+		errs = append(errs, errors.New("spec.config.agentVersion: requires agentId"))
+	case o.newAgent != nil:
 	case version != 0:
 		o.agent.OfBetaManagedAgentsAgents = &anthropic.BetaManagedAgentsAgentParams{
 			ID:      agentID,
@@ -167,6 +185,52 @@ func parseOptions(cfg *agent.Config) (*options, error) {
 		o.agent.OfString = param.NewOpt(agentID)
 	}
 	return &o, errors.Join(errs...)
+}
+
+// parseAgent reads the agent definition at spec.config.agent, or returns nil
+// when it is unset. The agent always gets the agent_toolset_20260401 tools,
+// since running them is what the task is for.
+func parseAgent(cfg *agent.Config) (*anthropic.BetaAgentNewParams, error) {
+	if id, err := cfg.String("agent"); err == nil && id != "" {
+		return nil, errors.New("spec.config.agent: must be an object that defines the agent; set agentId to use an existing agent")
+	}
+	def, err := cfg.Object("agent")
+	if err != nil || def == nil {
+		return nil, err
+	}
+	fields := map[string]string{"name": "", "model": "", "system": "", "description": ""}
+	var errs []error
+	for k, v := range def {
+		if _, ok := fields[k]; !ok {
+			errs = append(errs, fmt.Errorf("spec.config.agent.%s: unknown field; want name, model, system, or description", k))
+			continue
+		}
+		s, ok := v.(string)
+		if !ok {
+			errs = append(errs, fmt.Errorf("spec.config.agent.%s: must be a string", k))
+		}
+		fields[k] = s
+	}
+	if fields["model"] == "" {
+		errs = append(errs, errors.New("spec.config.agent.model: required"))
+	}
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+	p := &anthropic.BetaAgentNewParams{
+		Name:  cmp(fields["name"], cfg.TaskName, "ax"),
+		Model: anthropic.BetaManagedAgentsModelConfigParams{ID: fields["model"]},
+		Tools: []anthropic.BetaAgentNewParamsToolUnion{{
+			OfAgentToolset20260401: &anthropic.BetaManagedAgentsAgentToolset20260401Params{Type: "agent_toolset_20260401"},
+		}},
+	}
+	if fields["system"] != "" {
+		p.System = param.NewOpt(fields["system"])
+	}
+	if fields["description"] != "" {
+		p.Description = param.NewOpt(fields["description"])
+	}
+	return p, nil
 }
 
 // follow sends the prompt to the session and prints its events until the

@@ -15,14 +15,15 @@
 # A Task that runs a Claude Managed Agents session in /workspace.
 #
 # The task is the worker of a self-hosted Managed Agents environment. It
-# starts a session for spec.config.agent with spec.config.prompt, runs the
-# agent's bash, read, write, edit, glob, and grep tools in /workspace, and
-# exits when the agent finishes. The agent's model, system prompt, MCP
-# servers, and skills are configured on the Claude Platform. Leave out agent
+# creates the agent defined in spec.config.agent, starts a session for it
+# with spec.config.prompt, runs the agent's bash, read, write, edit, glob, and
+# grep tools in /workspace, and exits when the agent finishes. Set
+# spec.config.agentId instead to use an agent configured on the Claude
+# Platform, for example one with MCP servers or skills. Leave out the agent
 # and prompt to serve sessions created elsewhere until the task is deleted.
 #
-# Before applying, create an agent with the agent_toolset_20260401 tools and
-# a self-hosted environment, and generate an environment key for it.
+# Before applying, create a self-hosted environment and generate an
+# environment key for it.
 #
 # spec.image is the public image ghcr.io/rakyll/ax-images/claude-managed-agents.
 # Every release tag rebuilds it and pins this line to the new digest;
@@ -70,8 +71,11 @@ spec:
   image: "ghcr.io/rakyll/ax-images/claude-managed-agents@sha256:b622f9c9bc342880c88ed676063de568042b0f308d08485f4e98338a5d9025f3"
   config:
     environment: "env_..."
-    agent: "agent_..."
-    # Pin an agent version; the latest version by default.
+    agent:
+      model: "claude-opus-5-5"
+      system: "You are a careful software engineer working in /workspace."
+    # Or use an existing agent, optionally pinned to a version:
+    # agentId: "agent_..."
     # agentVersion: 1
     prompt: |
       Read the repository, install it with its test dependencies, and run the

@@ -29,13 +29,14 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/option"
 )
 
-// fakeAPI creates one session, accepts events for it, and streams canned
-// events once the prompt has been sent.
+// fakeAPI creates one agent and one session, accepts events for the session,
+// and streams canned events once the prompt has been sent.
 type fakeAPI struct {
 	t      *testing.T
 	events []string
 
 	mu      sync.Mutex
+	agent   map[string]any
 	session map[string]any
 	sent    []any
 	prompt  chan struct{}
@@ -46,6 +47,12 @@ func (f *fakeAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		f.t.Errorf("%s %s: anthropic-beta = %q", r.Method, r.URL.Path, got)
 	}
 	switch {
+	case r.Method == http.MethodPost && r.URL.Path == "/v1/agents":
+		f.mu.Lock()
+		json.NewDecoder(r.Body).Decode(&f.agent)
+		f.mu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"id": "agent_new", "type": "agent", "version": 1}`)
 	case r.Method == http.MethodPost && r.URL.Path == "/v1/sessions":
 		f.mu.Lock()
 		json.NewDecoder(r.Body).Decode(&f.session)
@@ -108,7 +115,7 @@ func runFake(t *testing.T, config string, events ...string) (*fakeAPI, *environm
 }
 
 func TestRun_Prompt(t *testing.T) {
-	api, worker, err := runFake(t, "{environment: env_1, agent: agent_1, prompt: Fix the tests.}",
+	api, worker, err := runFake(t, "{environment: env_1, agentId: agent_1, prompt: Fix the tests.}",
 		`{"id": "e1", "type": "agent.message", "content": [{"type": "text", "text": "Looking."}]}`,
 		`{"id": "e2", "type": "agent.tool_use", "name": "bash", "input": {"command": "pytest"}}`,
 		`{"id": "e3", "type": "session.status_idle", "stop_reason": {"type": "requires_action", "event_ids": ["e2"]}}`,
@@ -136,7 +143,7 @@ func TestRun_Prompt(t *testing.T) {
 }
 
 func TestRun_AgentVersion(t *testing.T) {
-	api, _, err := runFake(t, "{environment: env_1, agent: agent_1, agentVersion: 3, prompt: Hi.}",
+	api, _, err := runFake(t, "{environment: env_1, agentId: agent_1, agentVersion: 3, prompt: Hi.}",
 		`{"id": "e1", "type": "session.status_idle", "stop_reason": {"type": "end_turn"}}`,
 	)
 	if err != nil {
@@ -144,6 +151,22 @@ func TestRun_AgentVersion(t *testing.T) {
 	}
 	if got := fmt.Sprint(api.session["agent"]); got != "map[id:agent_1 type:agent version:3]" {
 		t.Errorf("agent = %s", got)
+	}
+}
+
+func TestRun_NewAgent(t *testing.T) {
+	api, _, err := runFake(t, "{environment: env_1, agent: {model: claude-opus-5-5, system: Fix tests.}, prompt: Hi.}",
+		`{"id": "e1", "type": "session.status_idle", "stop_reason": {"type": "end_turn"}}`,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _ := json.Marshal(api.agent)
+	if want := `{"model":{"id":"claude-opus-5-5"},"name":"fix-tests","system":"Fix tests.","tools":[{"type":"agent_toolset_20260401"}]}`; string(got) != want {
+		t.Errorf("agent request = %s, want %s", got, want)
+	}
+	if api.session["agent"] != "agent_new" {
+		t.Errorf("session agent = %v, want agent_new", api.session["agent"])
 	}
 }
 
@@ -192,20 +215,27 @@ func TestRun_Failures(t *testing.T) {
 		events       []string
 		want         string
 	}{
-		{"missing environment", "{agent: a, prompt: Hi.}", nil, "spec.config.environment: required"},
-		{"agent without prompt", "{environment: e, agent: a}", nil, "set agent and prompt together"},
-		{"prompt without agent", "{environment: e, prompt: Hi.}", nil, "set agent and prompt together"},
-		{"version without agent", "{environment: e, agentVersion: 2}", nil, "agentVersion: requires agent"},
+		{"missing environment", "{agentId: a, prompt: Hi.}", nil, "spec.config.environment: required"},
+		{"agent without prompt", "{environment: e, agentId: a}", nil, "set agent or agentId together with prompt"},
+		{"agent definition without prompt", "{environment: e, agent: {model: m}}", nil, "set agent or agentId together with prompt"},
+		{"prompt without agent", "{environment: e, prompt: Hi.}", nil, "set agent or agentId together with prompt"},
+		{"agent and agentId", "{environment: e, agent: {model: m}, agentId: a, prompt: Hi.}", nil, "not both"},
+		{"agent as ID", "{environment: e, agent: agent_1, prompt: Hi.}", nil, "set agentId to use an existing agent"},
+		{"agent without model", "{environment: e, agent: {name: n}, prompt: Hi.}", nil, "spec.config.agent.model: required"},
+		{"agent unknown field", "{environment: e, agent: {model: m, tools: []}, prompt: Hi.}", nil, "spec.config.agent.tools: unknown field"},
+		{"version with agent definition", "{environment: e, agent: {model: m}, agentVersion: 2, prompt: Hi.}", nil, "agentVersion: requires agentId"},
+		{"version without agent", "{environment: e, agentVersion: 2}", nil, "agentVersion: requires agentId"},
 		{"session without prompt", "{environment: e, session: s}", nil, "session: requires prompt"},
-		{"session with agent", "{environment: e, session: s, agent: a, prompt: Hi.}", nil, "leave agent and agentVersion unset"},
-		{"session with version", "{environment: e, session: s, agentVersion: 2, prompt: Hi.}", nil, "leave agent and agentVersion unset"},
-		{"stopped", "{environment: e, agent: a, prompt: Hi.}", []string{
+		{"session with agent", "{environment: e, session: s, agentId: a, prompt: Hi.}", nil, "leave agent, agentId, and agentVersion unset"},
+		{"session with agent definition", "{environment: e, session: s, agent: {model: m}, prompt: Hi.}", nil, "leave agent, agentId, and agentVersion unset"},
+		{"session with version", "{environment: e, session: s, agentVersion: 2, prompt: Hi.}", nil, "leave agent, agentId, and agentVersion unset"},
+		{"stopped", "{environment: e, agentId: a, prompt: Hi.}", []string{
 			`{"id": "e1", "type": "session.status_idle", "stop_reason": {"type": "retries_exhausted"}}`,
 		}, "session sess_1 stopped: retries_exhausted"},
-		{"terminated", "{environment: e, agent: a, prompt: Hi.}", []string{
+		{"terminated", "{environment: e, agentId: a, prompt: Hi.}", []string{
 			`{"id": "e1", "type": "session.status_terminated"}`,
 		}, "session sess_1: session.status_terminated"},
-		{"stream ends", "{environment: e, agent: a, prompt: Hi.}", nil, "event stream ended before the agent finished"},
+		{"stream ends", "{environment: e, agentId: a, prompt: Hi.}", nil, "event stream ended before the agent finished"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, _, err := runFake(t, tc.config, tc.events...)
