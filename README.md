@@ -8,7 +8,6 @@ Point an agent at a git repo with a prompt. Get back a diff and a markdown repor
 
 | Image | Runs | Secrets |
 |---|---|---|
-| [`gemini`](images/gemini) | A coding agent on the [Gemini API](https://ai.google.dev/gemini-api/docs/interactions) | `GEMINI_API_KEY` |
 | [`antigravity`](images/antigravity) | The [Antigravity agent](https://ai.google.dev/gemini-api/docs/antigravity-agent) on the Gemini API, with tools running in the workspace | `GEMINI_API_KEY` |
 | [`openai`](images/openai) | A coding agent on the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) | `OPENAI_API_KEY` |
 | [`claude-managed-agents`](images/claude-managed-agents) | [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview) sessions, with tools running in the workspace | `ANTHROPIC_API_KEY`, `ANTHROPIC_ENVIRONMENT_KEY` |
@@ -24,10 +23,10 @@ The sample task clones [pallets/itsdangerous](https://github.com/pallets/itsdang
 runs its tests, and fixes any failures:
 
 ```bash
-GEMINI_API_KEY=... envsubst < images/gemini/task.yaml | ax apply -f -
+GEMINI_API_KEY=... envsubst < images/antigravity/task.yaml | ax apply -f -
 
-ax ssh gemini -- cat /workspace/agent-output.md   # the report
-ax ssh gemini -- git -C /workspace diff           # the changes
+ax ssh antigravity -- cat /workspace/agent-output.md   # the report
+ax ssh antigravity -- git -C /workspace diff           # the changes
 ```
 
 ## Make it yours
@@ -36,11 +35,11 @@ Edit `spec.config` in the task:
 
 ```yaml
 spec:
-  image: ghcr.io/rakyll/ax-images/gemini@sha256:...
+  image: ghcr.io/rakyll/ax-images/antigravity@sha256:...
   config:
     prompt: Fix the flaky tests and explain what you changed.
     model: gemini-3.8-flash
-    maxTurns: 50
+    maxTurns: 100
 ```
 
 Each image's README lists every config key.

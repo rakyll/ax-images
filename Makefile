@@ -17,7 +17,7 @@
 # $(IMAGE_REPO)/<name>:latest. The digest is written to bin/<name>.digest,
 # and make pin writes it into the task.yaml.
 #
-#   make push-gemini IMAGE_REPO=gcr.io/my-project/ax-images
+#   make push-antigravity IMAGE_REPO=gcr.io/my-project/ax-images
 #   make images IMAGE_REPO=...       # build and push all of them
 #   make pin IMAGE_REPO=...          # point the task.yaml files at the pushed digests
 #   make test
