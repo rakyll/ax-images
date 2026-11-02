@@ -17,7 +17,6 @@ package agent
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -92,17 +91,6 @@ func CallTool(ctx context.Context, workspace, name string, args map[string]any) 
 		}
 	}
 	return fmt.Sprintf("error: unknown tool %q", name)
-}
-
-// CallToolJSON is CallTool with the arguments encoded as a JSON object.
-func CallToolJSON(ctx context.Context, workspace, name, args string) string {
-	m := map[string]any{}
-	if strings.TrimSpace(args) != "" {
-		if err := json.Unmarshal([]byte(args), &m); err != nil {
-			return fmt.Sprintf("error: arguments for %s are not a JSON object: %v", name, err)
-		}
-	}
-	return CallTool(ctx, workspace, name, m)
 }
 
 func object(props map[string]any, required ...string) map[string]any {

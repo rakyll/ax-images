@@ -131,7 +131,7 @@ func TestTools(t *testing.T) {
 	if got := call("read_file", map[string]any{"path": "a/b.txt"}); got != "hello ax" {
 		t.Errorf("read_file = %q", got)
 	}
-	if got := CallToolJSON(ctx, ws, "run_shell", `{"command": "cat a/b.txt; exit 3"}`); !strings.Contains(got, "hello ax") || !strings.Contains(got, "[exit code 3]") {
+	if got := call("run_shell", map[string]any{"command": "cat a/b.txt; exit 3"}); !strings.Contains(got, "hello ax") || !strings.Contains(got, "[exit code 3]") {
 		t.Errorf("run_shell = %q", got)
 	}
 }
@@ -143,17 +143,18 @@ func TestTools_Errors(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
-		name, args, want string
+		name string
+		args map[string]any
+		want string
 	}{
-		{"read_file", `{"path": "nope"}`, "error:"},
-		{"nope", `{}`, "error: unknown tool"},
-		{"read_file", `{}`, "error: missing argument"},
-		{"read_file", `{"path": 1}`, "error: argument"},
-		{"read_file", `not json`, "error: arguments"},
-		{"edit_file", `{"path": "f", "old_text": "x", "new_text": "y"}`, "found 2 matches"},
+		{"read_file", map[string]any{"path": "nope"}, "error:"},
+		{"nope", map[string]any{}, "error: unknown tool"},
+		{"read_file", map[string]any{}, "error: missing argument"},
+		{"read_file", map[string]any{"path": 1}, "error: argument"},
+		{"edit_file", map[string]any{"path": "f", "old_text": "x", "new_text": "y"}, "found 2 matches"},
 	} {
-		if got := CallToolJSON(ctx, ws, tc.name, tc.args); !strings.Contains(got, tc.want) {
-			t.Errorf("%s(%s) = %q, want it to contain %q", tc.name, tc.args, got, tc.want)
+		if got := CallTool(ctx, ws, tc.name, tc.args); !strings.Contains(got, tc.want) {
+			t.Errorf("%s(%v) = %q, want it to contain %q", tc.name, tc.args, got, tc.want)
 		}
 	}
 }
