@@ -1,0 +1,99 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A Task that runs the Antigravity agent on the Gemini API.
+#
+# The agent reasons on Google's servers, but no hosted sandbox is provisioned:
+# its shell and file tools are functions that run in /workspace, in this task.
+# Each interaction is chained to the previous one with previous_interaction_id.
+# HTTP MCP servers on the Workspace are connected by the API itself.
+# spec.command is left empty so the runner starts the agent, which reads
+# spec.config.
+#
+# spec.image is the public image ghcr.io/rakyll/ax-images/antigravity.
+# Every release tag rebuilds it and pins this line to the new digest;
+# Substrate rejects tag-only image references.
+#
+# Pass GEMINI_API_KEY through spec.env, substituting it at apply time
+# instead of committing it:
+#
+#   GEMINI_API_KEY=... envsubst < images/antigravity/task.yaml | ax apply -f -
+#
+# To run your own build instead:
+#
+#   make push-antigravity pin IMAGE_REPO=<your-registry>
+#
+# Then:
+#
+#   ax describe task antigravity
+#   ax ssh antigravity -- cat /workspace/agent-output.md
+#   ax ssh antigravity -- git -C /workspace diff
+apiVersion: ax.io/v1alpha1
+kind: Workspace
+metadata:
+  name: itsdangerous-antigravity
+  atespace: default
+spec:
+  git:
+    - name: origin
+      repo: "https://github.com/pallets/itsdangerous.git"
+      branch: "main"
+  files:
+    - path: "AGENTS.md"
+      content: |
+        # Working in this repo
+        - Pure-Python library. Install with `pip install -e . pytest`, test with `pytest`.
+        - Keep changes small and focused; do not add runtime dependencies.
+        - Do not push or open pull requests. Leave changes in the working tree.
+  # MCP servers declared here are handed to the agent.
+  # mcp:
+  #   servers:
+  #     - name: docs
+  #       endpoint: "http://docs-mcp.default.svc.cluster.local:8080/mcp"
+---
+apiVersion: ax.io/v1alpha1
+kind: Task
+metadata:
+  name: antigravity
+  atespace: default
+spec:
+  image: "ghcr.io/rakyll/ax-images/antigravity@sha256:PINNED_ON_FIRST_RELEASE"
+  config:
+    prompt: |
+      Read the repository, install it with its test dependencies, and run the
+      test suite. Fix any failing or flaky tests you find. If everything passes,
+      make one small, clearly correct improvement to the README. Finish by
+      writing a short markdown report of what you checked and what you changed
+      to /workspace/agent-output.md.
+    # The Antigravity agent; antigravity-preview-09-2026 by default.
+    # agent: antigravity-preview-09-2026
+    # The model the agent reasons with; the agent's default when unset.
+    model: gemini-3.8-flash
+    # Passed as agent_config.max_total_tokens; no budget by default.
+    # maxTotalTokens: 200000
+    maxTurns: 100
+    # Gemini's server-side tools, alongside the local shell and file tools.
+    builtinTools: ["google_search", "url_context"]
+    # System instruction for every interaction; none by default.
+    # systemInstruction: "You are ..."
+  env:
+    - name: GEMINI_API_KEY
+      value: "${GEMINI_API_KEY}"
+  resources:
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  workspace:
+    name: itsdangerous-antigravity
+  debug: true # serve guest services so `ax ssh` works; off by default
