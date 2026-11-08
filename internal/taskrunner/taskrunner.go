@@ -14,7 +14,7 @@
 
 // Package taskrunner is the task runner shared by every image in this
 // repository. Each image ships a single agent binary at /usr/local/bin/ax-agent
-// with /usr/local/bin/ax-task-runner symlinked to it; the agent calls Main
+// with /usr/local/bin/ax-task-runner linked to it; the agent calls Main
 // when it was started under the runner's name.
 //
 // When a task leaves spec.command empty, the runner runs the image's agent,
