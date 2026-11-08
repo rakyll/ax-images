@@ -42,6 +42,6 @@ LABEL org.opencontainers.image.source="https://github.com/rakyll/ax-images"
 # empty.
 ARG TARGETARCH
 COPY bin/linux_${TARGETARCH}/claude-managed-agents /usr/local/bin/ax-agent
-RUN ln -sf ax-agent /usr/local/bin/ax-task-runner
+RUN ln -f /usr/local/bin/ax-agent /usr/local/bin/ax-task-runner
 
 ENTRYPOINT ["/usr/local/bin/ax-task-runner"]

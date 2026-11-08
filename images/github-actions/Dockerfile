@@ -59,6 +59,6 @@ RUN set -eux; \
 # as ax-task-runner, which runs /usr/local/bin/ax-agent when spec.command is
 # empty.
 COPY bin/linux_${TARGETARCH}/github-actions /usr/local/bin/ax-agent
-RUN ln -sf ax-agent /usr/local/bin/ax-task-runner
+RUN ln -f /usr/local/bin/ax-agent /usr/local/bin/ax-task-runner
 
 ENTRYPOINT ["/usr/local/bin/ax-task-runner"]
